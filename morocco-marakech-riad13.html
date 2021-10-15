@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="jp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../kadai/guesthouse.css">
+    <title>travelers.inc</title>
+</head>
+
+<body>
+    <!-- riadhouse13 -->
+    <div id="riadhouse13">
+        <h2>Riad house 13</h2>
+        <div class="riad_img2">
+            <img src="../kadai/img/riad13_yard.jpeg" width="340" height="225" alt="中庭">
+            <img src="../kadai/img/riad13_bedroom.jpeg" width="340" height="225" alt="部屋">
+        </div>
+
+        <div>
+            <!-- information -->
+            <h3>information</h3>
+            <dl>
+                <dt>URL</dt>
+                <dd><a href="http://www.house13.net/" target="_blank">HP</a></dd>
+            </dl>
+            <dl>
+                <dt>Price</dt>
+                <dd>120DH-</dd>
+            </dl>
+
+            <!-- map -->
+            <h3>access</h3>
+            <div id="myMap" style='width:50%; height:50%;'></div>
+            <!-- 逃げのMAP表示 -->
+            <img src="../kadai/img/map.png" width="50%" alt="map">
+
+            <!-- 情報交換ノート -->
+            <h3>情報交換ノート</h3>
+            <ul class="information_note">
+                <li><label for='name'>name</label>
+                    <input type="text" id='name'>
+                </li>
+                <li><button id='send'>send</button></li>
+            </ul>
+            <textarea name="" id="text" cols="100" rows="1"></textarea>
+        </div>
+        <ul id="output"></ul>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- map-javascript -->
+    <script
+        src='https://www.bing.com/api/maps/mapcontrol?mkt=ja-jp&key=As8Wy2NSYqHiCcDp3t3ksyhV0jjoAIvuHX0JrFBHslYwmJCAQun_b5peRBqv-Np5'
+        async defer></script>
+    <script>
+        // 現在地の情報
+        // let map;
+        // function showError(error) {
+        //     let e = '';
+        //     if (error.code == 1) {
+        //         e = '位置情報が許可されてません';
+        //     } else if (error.code == 2) {
+        //         e = '現在位置を特定できません';
+        //     } else if (error.code == 3) {
+        //         e = '位置情報を取得する前にタイムアウトになりました';
+        //     }
+        //     alert('error:' + e);
+        // }
+        // const option = {
+        //     enableHighAccuracy: true,
+        //     maximumAge: 20000,
+        //     timeout: 1000000,
+        // };
+
+        // House13の位置
+        let map;
+        function GetMap() {
+            map = new Microsoft.Maps.Map('#myMap', {
+                center: new Microsoft.Maps.Location(31.626454, -7.981234), //Location center position
+                mapTypeId: Microsoft.Maps.MapTypeId.load, //Type: [load, aerial,canvasDark,canvasLight,birdseye,grayscale,streetside]
+                zoom: 8  //Zoom:1=zoomOut, 20=zoomUp[ 1~20 ]
+            });
+        }
+
+        // 緯度，経度，表示したいマップを入力するとピンを立てる関数を定義. 
+        // ピンの色と表示するよう設定.
+        // function pushPin(lat, lng, map) {
+        //     const location = new Microsoft.Maps.Location(31.626454, -7.981234)
+        //     const pin = new Microsoft.Maps.Pushpin(location, {
+        //         color: 'red', 
+        //         visible: true,  
+        //     });
+        //     map.entities.push(pin);
+        // };
+
+        // マップを表示する「mapsInit()」関数内でピンを設置する関数を実行.
+        // function mapsInit(position) {
+        //     const lat = position.coords.latitude;
+        //     const lng = position.coords.longitude;
+        //     マップ表示の処理(省略)
+        //     map = new Microsoft.Maps.Map('#mymap', {
+        //         center: {
+        //             latitude: lat, longitude: lng
+        //         },
+        //         zoom: 15,
+        //     });
+        //     pushPin(lat, lng, map);
+        // }
+
+        // 外部ファイルの読み込みがあるため，読み込み終了後に実行するよう指定する.
+        // 他のファイルの読み込みが終わったら{ } 内を実行する
+        // 現在地を取得し，成功したら地図を表示する関数を実行する
+        // window.onload = function () {
+        //     navigator.geolocation
+        //         .getCurrentPosition(mapsInit, showError, option);
+        // }
+    </script>
+
+    <!-- firebase_js -->
+    <script>
+        // 日時をいい感じの形式にする関数
+        function convertFromFirestoreTimestampToDatetime(timestamp) {
+            const _d = timestamp ? new Date(timestamp * 1000) : new Date();
+            const Y = _d.getFullYear();
+            const m = (_d.getMonth() + 1).toString().padStart(2, '0');
+            const d = _d.getDate().toString().padStart(2, '0');
+            const H = _d.getHours().toString().padStart(2, '0');
+            const i = _d.getMinutes().toString().padStart(2, '0');
+            const s = _d.getSeconds().toString().padStart(2, '0');
+            return `${Y}/${m}/${d} ${H}:${i}:${s}`;
+        }
+    </script>
+
+    <!-- 以下にfirebaseのコードを貼り付けよう -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // ↓追加
+        import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjGyOmXRytB1pPNS8H97NC2EJ_BNwqWc8",
+            authDomain: "guesthouse-ae1ac.firebaseapp.com",
+            projectId: "guesthouse-ae1ac",
+            storageBucket: "guesthouse-ae1ac.appspot.com",
+            messagingSenderId: "326425761486",
+            appId: "1:326425761486:web:551cc8c2d882703311629f"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+
+        // ↓追加
+        const db = getFirestore(app);
+
+        // 送信ボタンクリックでメッセージ
+        $('#send').on('click', function () {
+            // alert('ok')
+            addDoc(collection(db, 'guesthouse'), {
+                name: $('#name').val(),
+                text: $('#text').val(),
+                time: serverTimestamp(),
+            });
+            $('#text').val('');
+        });
+
+        // ↓まずデータ取得の条件を設定
+        const q = query(collection(db, 'guesthouse'), orderBy('time', 'desc'));
+        // ↓onSnapshotでcloud firestoreのデータ変更時に実行される! 
+        onSnapshot(q, (querySnapshot) => {
+            // querySnapshot.docsにcloud firestoreのデータが配列形式で入る 
+            const dataArray = []; // 必要なデータだけが入った新しい配列を作成 
+            querySnapshot.docs.forEach(function (doc) {
+                const data = {
+                    id: doc.id,
+                    data: doc.data(),
+                }
+                dataArray.push(data);
+            });
+            // 「`」で囲んでタグ文字列を表現.「${}」で変数を埋め込み 
+            const tagArray = [];
+            // `dataArray`は前回出てきたオブジェクトの配列 
+            dataArray.forEach(function (data) {
+                const datetime = convertFromFirestoreTimestampToDatetime(data.data.time.seconds);
+                tagArray.push(`
+      <li id=${data.id}>
+        <p>${data.data.name}</p>
+        <p>${data.data.text}</p>
+        <p>${datetime}</p>
+      </li> `)
+            })
+            $('#output').html(tagArray.join(''));
+        });
+    </script>
+
+</body>
+
+</html>
